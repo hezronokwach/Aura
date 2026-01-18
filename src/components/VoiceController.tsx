@@ -20,7 +20,7 @@ export const VoiceController = () => {
     const isConnecting = status === 'CONNECTING';
 
     return (
-        <div className="fixed bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-6 z-50">
+        <div className="w-full flex flex-col items-center gap-6 transition-all duration-500">
             <AnimatePresence>
                 {isActive && (
                     <motion.div
@@ -49,14 +49,14 @@ export const VoiceController = () => {
                 </motion.div>
             )}
 
-            <div className="flex items-center gap-3 bg-card/80 backdrop-blur-2xl border border-white/10 p-2.5 rounded-full shadow-[0_20px_50px_rgba(0,0,0,0.3)] ring-1 ring-white/5">
+            <div className="w-full flex items-center gap-3 bg-card/80 backdrop-blur-2xl border border-white/10 p-3 rounded-full shadow-[0_20px_50px_rgba(0,0,0,0.3)] ring-1 ring-white/5">
                 {!isActive ? (
                     <button
                         onClick={() => startSession()}
                         disabled={isConnecting}
-                        className={`flex items-center gap-2 px-8 py-4 rounded-full font-bold uppercase tracking-widest text-[10px] transition-all duration-500 shadow-xl ${isConnecting
+                        className={`flex items-center justify-center gap-4 w-full py-5 rounded-full font-bold uppercase tracking-widest text-[11px] transition-all duration-500 shadow-2xl ${isConnecting
                             ? 'bg-white/5 text-white/20'
-                            : 'bg-calm text-white hover:bg-calm/90 hover:scale-105 active:scale-95'
+                            : 'bg-calm text-white hover:bg-calm/90 hover:scale-[1.02] active:scale-[0.98]'
                             }`}
                     >
                         {isConnecting ? (
@@ -67,24 +67,30 @@ export const VoiceController = () => {
                         {isConnecting ? 'Waking up Aura' : 'Start Session'}
                     </button>
                 ) : (
-                    <div className="flex items-center gap-3">
-                        <button
-                            onClick={toggleMic}
-                            className={`p-3.5 rounded-full transition-all duration-300 shadow-lg ${isMicMuted
-                                ? 'bg-stressed text-white hover:bg-stressed/90 hover:scale-110'
-                                : 'bg-calm text-white hover:bg-calm/90 hover:scale-110 shadow-[0_0_20px_rgba(20,184,166,0.3)]'
-                                }`}
-                        >
-                            {isMicMuted ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
-                        </button>
+                    <div className="flex items-center justify-between w-full px-2">
+                        <div className="flex items-center gap-4">
+                            <button
+                                onClick={toggleMic}
+                                className={`p-4 rounded-full transition-all duration-300 shadow-lg ${isMicMuted
+                                    ? 'bg-stressed text-white hover:bg-stressed/90 hover:scale-110'
+                                    : 'bg-calm text-white hover:bg-calm/90 hover:scale-110 shadow-[0_0_20px_rgba(20,184,166,0.3)]'
+                                    }`}
+                            >
+                                {isMicMuted ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
+                            </button>
+                            <span className="text-[10px] font-black uppercase tracking-widest opacity-40">
+                                {isMicMuted ? 'Muted' : 'Listening'}
+                            </span>
+                        </div>
 
-                        <div className="w-px h-8 bg-white/10 mx-1" />
+                        <div className="w-px h-8 bg-white/10 mx-2" />
 
                         <button
                             onClick={endSession}
-                            className="p-3.5 rounded-full bg-white/5 border border-white/5 hover:bg-white/10 hover:border-white/10 text-white/60 hover:text-white transition-all duration-300"
+                            className="flex items-center gap-3 px-6 py-4 rounded-full bg-white/5 border border-white/5 hover:bg-white/10 hover:border-white/10 text-white/60 hover:text-white transition-all duration-300"
                         >
-                            <PhoneOff className="w-5 h-5" />
+                            <span className="text-[10px] font-bold uppercase tracking-widest">End</span>
+                            <PhoneOff className="w-4 h-4" />
                         </button>
                     </div>
                 )}
