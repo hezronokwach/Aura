@@ -20,11 +20,22 @@ export const AnalyticsDashboard = () => {
 
     return (
         <div className="w-full max-w-5xl space-y-8 mt-16">
-            <div className="flex items-center gap-3">
-                <div className="p-2 rounded-xl bg-calm/10">
-                    <Zap className="w-5 h-5 text-calm" />
+            <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-xl bg-calm/10">
+                        <Zap className="w-5 h-5 text-calm" />
+                    </div>
+                    <h2 className="text-2xl font-bold tracking-tight">Focus & Flux</h2>
                 </div>
-                <h2 className="text-2xl font-bold tracking-tight">Focus & Flux</h2>
+
+                {process.env.NODE_ENV === 'development' && (
+                    <button
+                        onClick={() => useAuraStore.getState().manageBurnout('2', 'postpone')}
+                        className="text-[10px] font-bold uppercase tracking-widest opacity-20 hover:opacity-100 transition-opacity px-3 py-1 border border-white/10 rounded-full"
+                    >
+                        Debug Move Task
+                    </button>
+                )}
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
