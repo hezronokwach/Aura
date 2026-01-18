@@ -78,6 +78,16 @@ const TaskCard = ({ task }: { task: Task }) => {
         low: 'bg-calm'
     };
 
+    const statusConfig = {
+        postponed: { label: 'Auto-Moved', color: 'bg-alert/10 text-alert border-alert/20', icon: <AlertCircle className="w-3 h-3" /> },
+        cancelled: { label: 'Cancelled', color: 'bg-stressed/10 text-stressed border-stressed/20', icon: <Circle className="w-3 h-3 fill-current" /> },
+        delegated: { label: 'Delegated', color: 'bg-calm/10 text-calm border-calm/20', icon: <CheckCircle2 className="w-3 h-3" /> },
+    };
+
+    const config = (task.status !== 'pending' && task.status !== 'completed')
+        ? statusConfig[task.status as keyof typeof statusConfig]
+        : null;
+
     return (
         <motion.div
             layout
@@ -89,17 +99,21 @@ const TaskCard = ({ task }: { task: Task }) => {
                 ease: [0.23, 1, 0.32, 1], // Custom cubic-bezier for snappy feel
                 layout: { duration: 0.6, ease: [0.23, 1, 0.32, 1] }
             }}
-            className="group relative p-5 rounded-[2rem] glass flex justify-between items-center border border-white/10 hover:border-white/20 transition-colors shadow-sm cursor-default"
+            className={`group relative p-5 rounded-[2rem] glass flex justify-between items-center border border-white/10 hover:border-white/20 transition-colors shadow-sm cursor-default ${task.status === 'cancelled' ? 'opacity-40 grayscale' : ''
+                }`}
         >
             <div className="flex items-center gap-4">
                 <button
                     onClick={() => postponeTask(task.id)}
-                    className="p-1 opacity-20 hover:opacity-100 transition-opacity hover:scale-110 active:scale-95"
+                    disabled={task.status !== 'pending'}
+                    className={`p-1 transition-opacity ${task.status === 'pending' ? 'opacity-20 hover:opacity-100 hover:scale-110 active:scale-95' : 'opacity-0 pointer-events-none'
+                        }`}
                 >
                     <Circle className="w-5 h-5" />
                 </button>
                 <div>
-                    <h3 className="font-semibold text-lg tracking-tight group-hover:text-calm transition-colors leading-tight">
+                    <h3 className={`font-semibold text-lg tracking-tight group-hover:text-calm transition-colors leading-tight ${task.status === 'cancelled' ? 'line-through' : ''
+                        }`}>
                         {task.title}
                     </h3>
                     <div className="flex items-center gap-3 mt-1.5">
@@ -111,10 +125,10 @@ const TaskCard = ({ task }: { task: Task }) => {
                 </div>
             </div>
 
-            {task.status === 'postponed' && (
-                <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-alert/10 text-alert border border-alert/20">
-                    <AlertCircle className="w-3 h-3" />
-                    <span className="text-[9px] font-black uppercase">Auto-Moved</span>
+            {config && (
+                <div className={`flex items-center gap-2 px-3 py-1 rounded-full border ${config.color}`}>
+                    {config.icon}
+                    <span className="text-[9px] font-black uppercase">{config.label}</span>
                 </div>
             )}
         </motion.div>
