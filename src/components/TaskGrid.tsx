@@ -17,8 +17,8 @@ export const TaskGrid = () => {
         };
     }, [tasks]);
 
-    const todayTasks = tasks.filter(t => t.day === 'today' && t.status !== 'completed');
-    const tomorrowTasks = tasks.filter(t => t.day === 'tomorrow' && t.status !== 'completed');
+    const todayTasks = tasks.filter(t => t.day === 'today' && t.status === 'pending');
+    const tomorrowTasks = tasks.filter(t => t.day === 'tomorrow' && (t.status === 'pending' || t.status === 'postponed'));
 
     return (
         <LayoutGroup>
@@ -83,6 +83,7 @@ export const TaskGrid = () => {
 
 const TaskCard = ({ task }: { task: Task }) => {
     const postponeTask = useAuraStore((state) => state.postponeTask);
+    const completeTask = useAuraStore((state) => state.completeTask);
 
     const priorityColors = {
         high: 'bg-stressed',
@@ -117,9 +118,12 @@ const TaskCard = ({ task }: { task: Task }) => {
         >
             <div className="flex items-center gap-4">
                 <button
-                    onClick={() => postponeTask(task.id)}
-                    disabled={task.status !== 'pending'}
-                    className={`p-1 transition-opacity ${task.status === 'pending' ? 'opacity-20 hover:opacity-100 hover:scale-110 active:scale-95' : 'opacity-0 pointer-events-none'
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        postponeTask(task.id);
+                    }}
+                    disabled={task.day === 'tomorrow'}
+                    className={`p-1 transition-opacity ${task.day === 'today' ? 'opacity-20 hover:opacity-100 hover:scale-110 active:scale-95' : 'opacity-0 pointer-events-none'
                         }`}
                 >
                     <Circle className="w-5 h-5" />
@@ -138,12 +142,26 @@ const TaskCard = ({ task }: { task: Task }) => {
                 </div>
             </div>
 
-            {config && (
-                <div className={`flex items-center gap-2 px-3 py-1 rounded-full border ${config.color}`}>
-                    {config.icon}
-                    <span className="text-[9px] font-black uppercase">{config.label}</span>
-                </div>
-            )}
+            <div className="flex items-center gap-3">
+                {config && (
+                    <div className={`flex items-center gap-2 px-3 py-1 rounded-full border ${config.color}`}>
+                        {config.icon}
+                        <span className="text-[9px] font-black uppercase">{config.label}</span>
+                    </div>
+                )}
+
+                <button
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        console.warn(`Manual Complete Clicked: ${task.id}`);
+                        completeTask(task.id);
+                    }}
+                    className="p-2 opacity-0 group-hover:opacity-40 hover:opacity-100 hover:text-calm transition-all"
+                    title="Complete Task"
+                >
+                    <CheckCircle2 className="w-4 h-4" />
+                </button>
+            </div>
         </motion.div>
     );
 };
