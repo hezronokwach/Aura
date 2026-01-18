@@ -53,30 +53,53 @@ export const useHume = () => {
 
         // Weights for different "stressful" emotions
         const weights: Record<string, number> = {
-            'Anxiety': 1.2,
-            'Distress': 1.5,
-            'Fear': 1.0,
-            'Tiredness': 0.8,
-            'Sorrow': 0.6,
-            'Disappointment': 0.5,
-            'Confusion': 0.4,
-            // Negative weights for calming emotions
-            'Calmness': -0.8,
-            'Contentment': -0.6,
-            'Relief': -1.0
+            'anxiety': 2.5,
+            'distress': 3.0,
+            'fear': 2.0,
+            'tiredness': 1.2,
+            'anger': 2.5,
+            'frustration': 2.8,
+            'sorrow': 1.0,
+            'disappointment': 1.2,
+            'confusion': 0.8,
+            'disgust': 0.6,
+            'pain': 1.5,
+            'calmness': -1.2,
+            'contentment': -1.0,
+            'relief': -1.8
         };
 
-        let calculatedScore = 0;
+        let stressSum = 0;
+        let calmSum = 0;
+        console.group('Stress Calculation Analysis');
 
-        Object.entries(weights).forEach(([emotion, weight]) => {
-            const score = prosody.scores[emotion] || 0;
-            calculatedScore += score * weight;
+        Object.entries(prosody.scores).forEach(([emotion, score]: [string, any]) => {
+            const eLower = emotion.toLowerCase();
+            const weight = weights[eLower] || 0;
+            if (weight !== 0) {
+                const contribution = score * weight;
+                if (weight > 0) {
+                    stressSum += contribution;
+                } else {
+                    calmSum += contribution;
+                }
+
+                if (Math.abs(contribution) > 0.005) {
+                    console.log(`- ${emotion}: score=${score.toFixed(3)}, weight=${weight}, contrib=${contribution.toFixed(3)}`);
+                }
+            }
         });
 
+        // Intervention: If any stress is detected, damp the calming effect significantly
+        const effectiveCalm = stressSum > 0.05 ? calmSum * 0.2 : calmSum;
+        const rawScore = stressSum + effectiveCalm;
+
         // Normalize and scale to 0-100
-        // We use a base sensitivity and clamp between 0-100
-        const baseScore = calculatedScore * 150; // Increased multiplier for better visibility
-        const finalScore = Math.max(0, Math.min(100, Math.round(baseScore)));
+        const finalScore = Math.max(0, Math.min(100, Math.round(rawScore * 300))); // Boosted sensitivity
+
+        console.log(`Stress Sum: ${stressSum.toFixed(4)}, Calm Sum: ${calmSum.toFixed(4)} (Effective: ${effectiveCalm.toFixed(4)})`);
+        console.log(`Final Scaled Stress Score: ${finalScore}`);
+        console.groupEnd();
 
         return finalScore;
     };
@@ -192,26 +215,43 @@ export const useHume = () => {
                 break;
 
             case 'tool_call':
-                console.log('Hume triggered tool:', msg.name, msg.parameters);
-                if (msg.name === 'manage_burnout') {
-                    // Parameters are passed as a JSON string or object
+                const toolName = msg.name;
+                const toolCallId = msg.toolCallId || msg.tool_call_id;
+                const toolParams = msg.parameters;
+
+                console.warn('!!! HUME TOOL CALL RECEIVED !!!', toolName, toolParams);
+
+                if (toolName === 'manage_burnout' && toolCallId) {
                     let params: any = {};
                     try {
-                        params = typeof msg.parameters === 'string'
-                            ? JSON.parse(msg.parameters)
-                            : msg.parameters;
+                        params = typeof toolParams === 'string'
+                            ? JSON.parse(toolParams)
+                            : toolParams;
                     } catch (e) {
                         console.error('Failed to parse tool parameters', e);
                     }
 
-                    const { task_id, adjustment_type } = params;
-                    const result = useAuraStore.getState().manageBurnout(task_id, adjustment_type);
+                    const taskId = params.task_id || params.taskId;
+                    const adjustmentType = params.adjustment_type || params.adjustmentType || 'postpone';
 
-                    socketRef.current?.sendToolResponse({
-                        type: 'tool_response',
-                        tool_call_id: msg.tool_call_id,
-                        content: result.message
-                    });
+                    console.log(`[AURA TOOL] EXECUTING: task=${taskId}, action=${adjustmentType}`);
+
+                    const result = useAuraStore.getState().manageBurnout(taskId, adjustmentType);
+                    console.log(`[AURA TOOL] RESULT:`, result.message);
+
+                    if (socketRef.current?.sendToolResponseMessage) {
+                        socketRef.current.sendToolResponseMessage({
+                            type: 'tool_response',
+                            toolCallId: toolCallId,
+                            content: result.message
+                        });
+                    } else if (socketRef.current?.sendToolResponse) {
+                        socketRef.current.sendToolResponse({
+                            type: 'tool_response',
+                            tool_call_id: toolCallId,
+                            content: result.message
+                        });
+                    }
                 }
                 break;
 
@@ -221,7 +261,7 @@ export const useHume = () => {
                 break;
 
             default:
-                // console.log('Unhandled message type:', msg.type);
+                console.log('DEBUG: Received message of type:', msg.type, msg);
                 break;
         }
     }, [setStressScore, setVoiceState]);
@@ -233,14 +273,21 @@ export const useHume = () => {
                 `- [${t.id}] ${t.title} (${t.priority} priority, status: ${t.status}, due: ${t.day})`
             ).join('\n');
 
-            const contextMessage = `\n\nCONTEXT: The user's current task list is as follows:\n${taskContext}\n\nPlease use this information to provide personalized help and refer to tasks by their titles. If you reschedule a task, use the manage_burnout tool.`;
+            const baseInstructions = `
+You are Aura, an empathic productivity assistant.
+CORE RULES:
+1. Always use the 'manage_burnout' tool when moving, cancelling, or delegating tasks.
+2. Refer to tasks by their IDs (e.g., '1', '2').
+3. Be empathic if the user sounds stressed.
+`;
+
+            const fullPrompt = `${baseInstructions}\n\nUSER TASK LIST:\n${taskContext}\n\nIf the user asks to move a task, you MUST use the manage_burnout tool.`;
 
             console.group('Aura Context Sync');
-            console.log('Injecting tasks into System Prompt...');
+            console.log('Injecting tasks and reinforcing tool rules...');
 
-            // Using system_prompt instead of context as it is more reliably supported as a string
             socketRef.current.sendSessionSettings({
-                system_prompt: contextMessage
+                system_prompt: fullPrompt
             });
             console.groupEnd();
         }
