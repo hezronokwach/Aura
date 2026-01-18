@@ -6,7 +6,7 @@ export interface Task {
     title: string;
     priority: 'low' | 'medium' | 'high';
     day: 'today' | 'tomorrow';
-    status: 'pending' | 'completed' | 'postponed';
+    status: 'pending' | 'completed' | 'postponed' | 'cancelled' | 'delegated';
 }
 
 interface AuraState {
@@ -19,6 +19,7 @@ interface AuraState {
     setStressScore: (score: number) => void;
     setVoiceState: (state: AuraState['voiceState']) => void;
     postponeTask: (id: string) => void;
+    manageBurnout: (taskId?: string, adjustmentType?: 'postpone' | 'cancel' | 'delegate') => { success: boolean; message: string };
     addTask: (task: Task) => void;
     addSessionData: (data: { time: string; score: number }) => void;
     resetSession: () => void;
@@ -49,6 +50,39 @@ export const useAuraStore = create<AuraState>()(
                         t.id === id ? { ...t, day: 'tomorrow', status: 'postponed' } : t
                     ),
                 })),
+
+                manageBurnout: (taskId, adjustmentType = 'postpone') => {
+                    let message = "";
+                    let success = false;
+
+                    set((state) => {
+                        const taskIndex = state.tasks.findIndex(t => t.id === taskId);
+
+                        if (taskIndex === -1) {
+                            message = `Task with ID ${taskId} not found.`;
+                            return state;
+                        }
+
+                        const task = state.tasks[taskIndex];
+                        const updatedTasks = [...state.tasks];
+
+                        if (adjustmentType === 'postpone') {
+                            updatedTasks[taskIndex] = { ...task, day: 'tomorrow', status: 'postponed' };
+                            message = `Postponed "${task.title}" to tomorrow.`;
+                        } else if (adjustmentType === 'cancel') {
+                            updatedTasks[taskIndex] = { ...task, status: 'cancelled' };
+                            message = `Cancelled "${task.title}".`;
+                        } else if (adjustmentType === 'delegate') {
+                            updatedTasks[taskIndex] = { ...task, status: 'delegated' };
+                            message = `Marked "${task.title}" for delegation.`;
+                        }
+
+                        success = true;
+                        return { tasks: updatedTasks };
+                    });
+
+                    return { success, message };
+                },
 
                 addTask: (task) => set((state) => ({
                     tasks: [...state.tasks, task],
