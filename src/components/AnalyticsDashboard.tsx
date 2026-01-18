@@ -61,7 +61,7 @@ export const AnalyticsDashboard = () => {
                 </div>
 
                 {/* Chart Section */}
-                <div className="lg:col-span-2">
+                <div className="lg:col-span-2 min-h-[400px] relative">
                     <StressChart />
                 </div>
             </div>
