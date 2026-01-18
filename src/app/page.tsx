@@ -36,15 +36,14 @@ export default function Home() {
       <div className="flex-1 flex flex-col lg:flex-row max-w-7xl mx-auto w-full px-6 py-6 gap-6">
 
         {/* Left Hub: Sticky Intelligence Sidebar */}
-        <aside className="lg:w-80 flex flex-col gap-6 lg:sticky lg:top-24 lg:h-[calc(100vh-6rem)]">
-          {/* Sphere Visualizer Container */}
-          <div className="flex-1 min-h-[320px] glass rounded-[2.5rem] border border-white/10 flex flex-col items-center justify-center p-6 relative overflow-hidden group">
-            <div className="absolute inset-0 bg-gradient-to-b from-calm/5 via-transparent to-transparent opacity-50" />
+        <aside className="lg:w-80 flex flex-col gap-4 lg:sticky lg:top-24 lg:h-[calc(100vh-6rem)]">
+          {/* Sphere Visualizer Container - Now more compact and transparent */}
+          <div className="relative flex flex-col items-center justify-center py-4 overflow-hidden group">
             <AuraSphere />
 
-            <div className="absolute bottom-8 left-0 right-0 text-center">
-              <div className="text-[10px] font-black uppercase tracking-[0.3em] opacity-20 group-hover:opacity-40 transition-opacity">
-                Aura Awareness Matrix
+            <div className="absolute bottom-2 left-0 right-0 text-center">
+              <div className="text-[9px] font-black uppercase tracking-[0.3em] opacity-10 group-hover:opacity-30 transition-opacity">
+                Aura Matrix
               </div>
             </div>
           </div>
