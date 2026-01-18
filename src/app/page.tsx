@@ -11,7 +11,7 @@ export default function Home() {
   useFirebaseSync();
 
   return (
-    <main className="flex flex-col items-center justify-between p-8 md:p-24 min-h-screen">
+    <main className="flex flex-col items-center justify-between p-8 md:p-24 min-h-screen pb-40">
       {/* Header */}
       <div className="w-full max-w-5xl flex justify-between items-center mb-12">
         <div>
