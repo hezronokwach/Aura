@@ -16,8 +16,8 @@ export default function Home() {
       <header className="w-full border-b border-white/5 bg-slate-950/50 backdrop-blur-xl z-50">
         <div className="max-w-7xl mx-auto px-6 h-20 flex justify-between items-center">
           <div className="flex items-center gap-3">
-            <div className="h-8 w-8 rounded-xl bg-calm/20 flex items-center justify-center">
-              <div className="h-2 w-2 rounded-full bg-calm shadow-[0_0_10px_var(--calm)]" />
+            <div className="h-10 w-10 rounded-xl overflow-hidden border border-white/10 shadow-lg">
+              <img src="/logo.png" alt="Aura Logo" className="w-full h-full object-cover" />
             </div>
             <div>
               <h1 className="text-xl font-bold tracking-tight">Aura AI</h1>
@@ -25,7 +25,7 @@ export default function Home() {
             </div>
           </div>
           <div className="flex items-center gap-4 text-xs font-medium opacity-40">
-            <span>v1.0.4</span>
+            <span>v1.0.0</span>
             <div className="w-px h-4 bg-white/10" />
             <span className="uppercase tracking-widest">System Optimal</span>
           </div>
