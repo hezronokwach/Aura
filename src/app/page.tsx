@@ -11,35 +11,72 @@ export default function Home() {
   useFirebaseSync();
 
   return (
-    <main className="flex flex-col items-center justify-between p-8 md:p-24 min-h-screen pb-40">
-      {/* Header */}
-      <div className="w-full max-w-5xl flex justify-between items-center mb-12">
-        <div>
-          <h1 className="text-4xl font-bold tracking-tight">Aura AI</h1>
-          <p className="opacity-50">Your Empathetic Productivity Partner</p>
+    <main className="min-h-screen bg-[#020617] text-slate-50 flex flex-col">
+      {/* Global Header */}
+      <header className="w-full border-b border-white/5 bg-slate-950/50 backdrop-blur-xl z-50">
+        <div className="max-w-7xl mx-auto px-6 h-20 flex justify-between items-center">
+          <div className="flex items-center gap-3">
+            <div className="h-8 w-8 rounded-xl bg-calm/20 flex items-center justify-center">
+              <div className="h-2 w-2 rounded-full bg-calm shadow-[0_0_10px_var(--calm)]" />
+            </div>
+            <div>
+              <h1 className="text-xl font-bold tracking-tight">Aura AI</h1>
+              <p className="text-[10px] uppercase tracking-widest opacity-40 font-bold">Empathetic Proxy</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-4 text-xs font-medium opacity-40">
+            <span>v1.0.4</span>
+            <div className="w-px h-4 bg-white/10" />
+            <span className="uppercase tracking-widest">System Optimal</span>
+          </div>
         </div>
-        <div className="h-10 w-10 rounded-full bg-calm/20 flex items-center justify-center animate-pulse">
-          <div className="h-2 w-2 rounded-full bg-calm" />
-        </div>
+      </header>
+
+      {/* Dashboard Substrate */}
+      <div className="flex-1 flex flex-col lg:flex-row max-w-7xl mx-auto w-full px-6 py-6 gap-6">
+
+        {/* Left Hub: Sticky Intelligence Sidebar */}
+        <aside className="lg:w-80 flex flex-col gap-6 lg:sticky lg:top-24 lg:h-[calc(100vh-6rem)]">
+          {/* Sphere Visualizer Container */}
+          <div className="flex-1 min-h-[320px] glass rounded-[2.5rem] border border-white/10 flex flex-col items-center justify-center p-6 relative overflow-hidden group">
+            <div className="absolute inset-0 bg-gradient-to-b from-calm/5 via-transparent to-transparent opacity-50" />
+            <AuraSphere />
+
+            <div className="absolute bottom-8 left-0 right-0 text-center">
+              <div className="text-[10px] font-black uppercase tracking-[0.3em] opacity-20 group-hover:opacity-40 transition-opacity">
+                Aura Awareness Matrix
+              </div>
+            </div>
+          </div>
+
+          {/* Voice & Emotion Control Hub */}
+          <VoiceController />
+        </aside>
+
+        {/* Right Area: Action & Insights */}
+        <section className="flex-1 flex flex-col gap-6 pb-20">
+          {/* Main Task Interface */}
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center justify-between px-2">
+              <h2 className="text-sm font-black uppercase tracking-[0.2em] opacity-40">Active Flow</h2>
+            </div>
+            <TaskGrid />
+          </div>
+
+          {/* Insights Layer */}
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center justify-between px-2">
+              <h2 className="text-sm font-black uppercase tracking-[0.2em] opacity-40">Deep Analysis</h2>
+            </div>
+            <AnalyticsDashboard />
+          </div>
+        </section>
       </div>
 
-      {/* Hero Section - Aura Sphere */}
-      <div className="flex-1 flex items-center justify-center py-20">
-        <AuraSphere />
-      </div>
-
-      {/* Tasks Section */}
-      <TaskGrid />
-
-      {/* Analytics Section */}
-      <AnalyticsDashboard />
-
-      {/* Voice Layer Overlay */}
-      <VoiceController />
-
-      {/* Footer / Interaction Hint */}
-      <div className="mt-20 text-center opacity-30 text-sm">
-        <p>Start a session to begin your empathetic interaction</p>
+      {/* Background Polish */}
+      <div className="fixed inset-0 pointer-events-none -z-10">
+        <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-calm/5 rounded-full blur-[120px]" />
+        <div className="absolute bottom-1/4 right-1/4 w-[500px] h-[500px] bg-stressed/5 rounded-full blur-[120px]" />
       </div>
     </main>
   );

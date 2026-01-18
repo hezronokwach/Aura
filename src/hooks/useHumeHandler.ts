@@ -33,6 +33,7 @@ export const useHume = () => {
     const socketRef = useRef<any>(null);
     const recorderRef = useRef<MediaRecorder | null>(null);
     const playerRef = useRef<EVIWebAudioPlayer | null>(null);
+    const lastSyncedTasksRef = useRef<string>('');
 
     useEffect(() => {
         return () => {
@@ -232,12 +233,22 @@ export const useHume = () => {
                     }
 
                     const taskId = params.task_id || params.taskId;
-                    const adjustmentType = params.adjustment_type || params.adjustmentType || 'postpone';
+                    // Resiliency: AI sometimes hallucination 'new_status' or 'status'
+                    let adjustmentType = params.adjustment_type || params.adjustmentType || params.new_status || params.status || 'postpone';
 
-                    console.log(`[AURA TOOL] EXECUTING: task=${taskId}, action=${adjustmentType}`);
+                    // Normalize common AI variations to strict internal actions
+                    const isComplete = ['complete', 'completed', 'finished', 'done', 'finish'].includes(adjustmentType.toLowerCase());
+                    const isPostpone = ['postpone', 'postponed', 'later', 'move'].includes(adjustmentType.toLowerCase());
+                    const isCancel = ['cancel', 'cancelled', 'drop', 'remove'].includes(adjustmentType.toLowerCase());
+
+                    if (isComplete) adjustmentType = 'complete';
+                    else if (isPostpone) adjustmentType = 'postpone';
+                    else if (isCancel) adjustmentType = 'cancel';
+
+                    console.warn(`[AURA TOOL] EXECUTING: task=${taskId}, action=${adjustmentType}`);
 
                     const result = useAuraStore.getState().manageBurnout(taskId, adjustmentType);
-                    console.log(`[AURA TOOL] RESULT:`, result.message);
+                    console.warn(`[AURA TOOL] RESULT:`, result.message);
 
                     if (socketRef.current?.sendToolResponseMessage) {
                         socketRef.current.sendToolResponseMessage({
@@ -273,23 +284,28 @@ export const useHume = () => {
                 `- [${t.id}] ${t.title} (${t.priority} priority, status: ${t.status}, due: ${t.day})`
             ).join('\n');
 
+            // ONLY sync if the task state has actually changed to avoid socket spam/closure
+            if (taskContext === lastSyncedTasksRef.current) return;
+            lastSyncedTasksRef.current = taskContext;
+
             const baseInstructions = `
 You are Aura, an empathic productivity assistant.
 CORE RULES:
-1. Always use the 'manage_burnout' tool when moving, cancelling, or delegating tasks.
-2. Refer to tasks by their IDs (e.g., '1', '2').
-3. Be empathic if the user sounds stressed.
+1. You MUST use 'manage_burnout' for ANY status change. Never just talk about it—do it!
+2. ACTION MAPPING:
+   - User says "Finished", "Done", "Fixed", or "Checked off" -> Use 'complete'.
+   - User says "Later", "Tomorrow", or "Can't do it now" -> Use 'postpone'.
+3. MANDATORY: The tool 'manage_burnout' is your ONLY way to change tasks. Even if the user sounds happy, use it to mark things as 'complete'.
+4. Celebrate! When a user finishes a task, call the tool first, then tell them how proud you are.
+5. Refer to tasks by their IDs (e.g., "Task 1").
 `;
 
-            const fullPrompt = `${baseInstructions}\n\nUSER TASK LIST:\n${taskContext}\n\nIf the user asks to move a task, you MUST use the manage_burnout tool.`;
+            const fullPrompt = `${baseInstructions}\n\nCURRENT TASKS:\n${taskContext}`;
 
-            console.group('Aura Context Sync');
-            console.log('Injecting tasks and reinforcing tool rules...');
-
+            console.warn('--- AURA: Syncing Tasks to Hume ---');
             socketRef.current.sendSessionSettings({
                 system_prompt: fullPrompt
             });
-            console.groupEnd();
         }
     }, [tasks, status]);
 
