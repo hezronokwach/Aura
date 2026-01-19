@@ -4,6 +4,7 @@ import { EnhancedAuraSphere } from '@/components/EnhancedAuraSphere';
 import { TaskGrid } from '@/components/TaskGrid';
 import { VoiceController } from '@/components/VoiceController';
 import { AnalyticsDashboard } from '@/components/AnalyticsDashboard';
+import { FeedbackToast } from '@/components/FeedbackToast';
 import { useFirebaseSync } from '@/hooks/useFirebase';
 import { BackgroundGradientAnimation } from '@/components/aceternity/background-gradient-animation';
 import { GridPattern } from '@/components/aceternity/grid-pattern';
@@ -39,6 +40,8 @@ export default function Home() {
       />
 
       <main className="min-h-screen bg-transparent text-slate-50 flex flex-col relative z-0">
+        {/* Feedback Toast */}
+        <FeedbackToast />
       {/* Global Header */}
       <header className="w-full border-b border-white/5 bg-slate-950/50 backdrop-blur-xl z-50">
         <div className="max-w-7xl mx-auto px-6 h-20 flex justify-between items-center">
