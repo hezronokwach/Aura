@@ -30,7 +30,12 @@ export const TaskGrid = () => {
                             <div className="p-2 rounded-xl bg-calm/10">
                                 <Clock className="w-5 h-5 text-calm" />
                             </div>
-                            <h2 className="text-xl font-bold tracking-tight">Today's Focus</h2>
+                            <div>
+                                <h2 className="text-xl font-bold tracking-tight">Today's Focus</h2>
+                                <p className="text-[10px] uppercase tracking-widest opacity-40 font-bold mt-0.5">
+                                    {new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+                                </p>
+                            </div>
                         </div>
                         <span className="text-xs font-bold uppercase tracking-widest opacity-30">
                             {todayTasks.length} {todayTasks.length === 1 ? 'Task' : 'Tasks'}
