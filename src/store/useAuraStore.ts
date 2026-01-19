@@ -14,6 +14,7 @@ interface AuraState {
     tasks: Task[];
     voiceState: 'idle' | 'listening' | 'speaking' | 'processing';
     sessionHistory: { time: string; score: number }[];
+    feedbackMessage: { text: string; type: 'success' | 'info' | 'warning' } | null;
 
     // Actions
     setStressScore: (score: number) => void;
@@ -24,6 +25,7 @@ interface AuraState {
     addTask: (task: Task) => void;
     addSessionData: (data: { time: string; score: number }) => void;
     resetSession: () => void;
+    setFeedbackMessage: (message: { text: string; type: 'success' | 'info' | 'warning' } | null) => void;
 }
 
 export const useAuraStore = create<AuraState>()(
@@ -38,6 +40,7 @@ export const useAuraStore = create<AuraState>()(
                     { id: '3', title: 'English Literature Essay', priority: 'low', day: 'today', status: 'pending' },
                 ],
                 sessionHistory: [],
+                feedbackMessage: null,
 
                 setStressScore: (score) => set((state) => ({
                     stressScore: score,
@@ -48,6 +51,19 @@ export const useAuraStore = create<AuraState>()(
 
                 postponeTask: (id) => set((state) => {
                     console.warn(`[STORE] Postponing Task: ${id}`);
+                    const task = state.tasks.find(t => String(t.id) === String(id));
+                    
+                    // Show feedback message
+                    if (task) {
+                        setTimeout(() => {
+                            useAuraStore.getState().setFeedbackMessage({
+                                text: `"${task.title}" moved to tomorrow`,
+                                type: 'info'
+                            });
+                            setTimeout(() => useAuraStore.getState().setFeedbackMessage(null), 3000);
+                        }, 100);
+                    }
+                    
                     return {
                         tasks: state.tasks.map((t) =>
                             String(t.id) === String(id) ? { ...t, day: 'tomorrow' as const, status: 'postponed' as const } : t
@@ -57,6 +73,19 @@ export const useAuraStore = create<AuraState>()(
 
                 completeTask: (id) => set((state) => {
                     console.warn(`[STORE] Completing Task: ${id}`);
+                    const task = state.tasks.find(t => String(t.id) === String(id));
+                    
+                    // Show feedback message
+                    if (task) {
+                        setTimeout(() => {
+                            useAuraStore.getState().setFeedbackMessage({
+                                text: `"${task.title}" completed! Great work!`,
+                                type: 'success'
+                            });
+                            setTimeout(() => useAuraStore.getState().setFeedbackMessage(null), 3000);
+                        }, 100);
+                    }
+                    
                     return {
                         tasks: state.tasks.map((t) =>
                             String(t.id) === String(id) ? { ...t, status: 'completed' as const } : t
@@ -83,15 +112,44 @@ export const useAuraStore = create<AuraState>()(
                         if (adjustmentType === 'postpone') {
                             updatedTasks[taskIndex] = { ...task, day: 'tomorrow', status: 'postponed' };
                             message = `Postponed "${task.title}" to tomorrow.`;
+                            // Show feedback toast
+                            setTimeout(() => {
+                                useAuraStore.getState().setFeedbackMessage({
+                                    text: `"${task.title}" moved to tomorrow`,
+                                    type: 'info'
+                                });
+                                setTimeout(() => useAuraStore.getState().setFeedbackMessage(null), 3000);
+                            }, 100);
                         } else if (adjustmentType === 'cancel') {
                             updatedTasks[taskIndex] = { ...task, status: 'cancelled' };
                             message = `Cancelled "${task.title}".`;
+                            setTimeout(() => {
+                                useAuraStore.getState().setFeedbackMessage({
+                                    text: `"${task.title}" cancelled`,
+                                    type: 'warning'
+                                });
+                                setTimeout(() => useAuraStore.getState().setFeedbackMessage(null), 3000);
+                            }, 100);
                         } else if (adjustmentType === 'delegate') {
                             updatedTasks[taskIndex] = { ...task, status: 'delegated' };
                             message = `Marked "${task.title}" for delegation.`;
+                            setTimeout(() => {
+                                useAuraStore.getState().setFeedbackMessage({
+                                    text: `"${task.title}" delegated`,
+                                    type: 'info'
+                                });
+                                setTimeout(() => useAuraStore.getState().setFeedbackMessage(null), 3000);
+                            }, 100);
                         } else if (adjustmentType === 'complete') {
                             updatedTasks[taskIndex] = { ...task, status: 'completed' };
                             message = `Awesome! I've marked "${task.title}" as completed.`;
+                            setTimeout(() => {
+                                useAuraStore.getState().setFeedbackMessage({
+                                    text: `"${task.title}" completed! Great work!`,
+                                    type: 'success'
+                                });
+                                setTimeout(() => useAuraStore.getState().setFeedbackMessage(null), 3000);
+                            }, 100);
                         }
 
                         success = true;
@@ -111,6 +169,8 @@ export const useAuraStore = create<AuraState>()(
                 })),
 
                 resetSession: () => set({ stressScore: 0, sessionHistory: [] }),
+
+                setFeedbackMessage: (message) => set({ feedbackMessage: message }),
             }),
             {
                 name: 'aura-ai-storage', // unique name for localStorage
