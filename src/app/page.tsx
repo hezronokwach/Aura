@@ -1,17 +1,44 @@
 'use client';
 
-import { AuraSphere } from '@/components/AuraSphere';
+import { EnhancedAuraSphere } from '@/components/EnhancedAuraSphere';
 import { TaskGrid } from '@/components/TaskGrid';
 import { VoiceController } from '@/components/VoiceController';
 import { AnalyticsDashboard } from '@/components/AnalyticsDashboard';
 import { useFirebaseSync } from '@/hooks/useFirebase';
+import { BackgroundGradientAnimation } from '@/components/aceternity/background-gradient-animation';
+import { GridPattern } from '@/components/aceternity/grid-pattern';
 
 export default function Home() {
   // Sync state with Firebase (if configured)
   useFirebaseSync();
 
   return (
-    <main className="min-h-screen bg-[#020617] text-slate-50 flex flex-col">
+    <>
+      {/* Animated Background - OUTSIDE main content, won't affect LayoutGroup */}
+      <BackgroundGradientAnimation
+        gradientBackgroundStart="rgb(2, 6, 23)"
+        gradientBackgroundEnd="rgb(15, 23, 42)"
+        firstColor="20, 184, 166"
+        secondColor="245, 158, 11"
+        thirdColor="225, 29, 72"
+        fourthColor="100, 116, 139"
+        fifthColor="45, 212, 191"
+        pointerColor="20, 184, 166"
+        size="80%"
+        blendingValue="hard-light"
+        interactive={false}
+        containerClassName="fixed inset-0 -z-20"
+      />
+
+      {/* Grid Pattern Overlay */}
+      <GridPattern
+        width={40}
+        height={40}
+        className="fixed inset-0 -z-10 opacity-20"
+        strokeDasharray="4 4"
+      />
+
+      <main className="min-h-screen bg-transparent text-slate-50 flex flex-col relative z-0">
       {/* Global Header */}
       <header className="w-full border-b border-white/5 bg-slate-950/50 backdrop-blur-xl z-50">
         <div className="max-w-7xl mx-auto px-6 h-20 flex justify-between items-center">
@@ -39,7 +66,7 @@ export default function Home() {
         <aside className="lg:w-80 flex flex-col gap-4 lg:sticky lg:top-24 lg:h-[calc(100vh-6rem)]">
           {/* Sphere Visualizer Container - Now more compact and transparent */}
           <div className="relative flex flex-col items-center justify-center py-4 overflow-hidden group">
-            <AuraSphere />
+            <EnhancedAuraSphere />
 
             <div className="absolute bottom-2 left-0 right-0 text-center">
               <div className="text-[9px] font-black uppercase tracking-[0.3em] opacity-10 group-hover:opacity-30 transition-opacity">
@@ -78,5 +105,6 @@ export default function Home() {
         <div className="absolute bottom-1/4 right-1/4 w-[500px] h-[500px] bg-stressed/5 rounded-full blur-[120px]" />
       </div>
     </main>
+    </>
   );
 }
