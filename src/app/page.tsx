@@ -65,7 +65,7 @@ export default function Home() {
               <img src="/logo.png" alt="Aura Logo" className="w-full h-full object-cover" />
             </div>
             <div>
-              <h1 className="text-xl font-bold tracking-tight">Aura AI</h1>
+              <h1 className="text-xl font-bold tracking-tight">Aura</h1>
               <p className="text-[10px] uppercase tracking-widest opacity-40 font-bold">Empathetic Proxy</p>
             </div>
           </div>

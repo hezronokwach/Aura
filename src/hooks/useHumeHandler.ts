@@ -227,6 +227,36 @@ export const useHume = () => {
 
                 console.warn('!!! HUME TOOL CALL RECEIVED !!!', toolName, toolParams);
 
+                if (toolName === 'end_call' && toolCallId) {
+                    console.warn('[AURA TOOL] END_CALL triggered by AI');
+                    
+                    // Send tool response first
+                    if (socketRef.current?.sendToolResponseMessage) {
+                        socketRef.current.sendToolResponseMessage({
+                            type: 'tool_response',
+                            toolCallId: toolCallId,
+                            content: 'Ending session. Goodbye!'
+                        });
+                    } else if (socketRef.current?.sendToolResponse) {
+                        socketRef.current.sendToolResponse({
+                            type: 'tool_response',
+                            tool_call_id: toolCallId,
+                            content: 'Ending session. Goodbye!'
+                        });
+                    }
+                    
+                    // End session after brief delay
+                    setTimeout(() => {
+                        stopAudioCapture();
+                        if (socketRef.current) {
+                            socketRef.current.close();
+                            socketRef.current = null;
+                        }
+                        setStatus('IDLE');
+                        setMessages([]);
+                    }, 1000);
+                }
+
                 if (toolName === 'manage_burnout' && toolCallId) {
                     let params: any = {};
                     try {
@@ -290,7 +320,7 @@ export const useHume = () => {
                 console.log('DEBUG: Received message of type:', msg.type, msg);
                 break;
         }
-    }, [setStressScore, setVoiceState]);
+    }, [setStressScore, setVoiceState, stopAudioCapture]);
 
     // Update Hume context whenever tasks change
     useEffect(() => {
