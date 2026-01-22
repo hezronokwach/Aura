@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist, devtools } from 'zustand/middleware';
+import { ActionLog } from '@/types';
 
 export interface Task {
     id: string;
@@ -15,6 +16,14 @@ interface AuraState {
     voiceState: 'idle' | 'listening' | 'speaking' | 'processing';
     sessionHistory: { time: string; score: number }[];
     feedbackMessage: { text: string; type: 'success' | 'info' | 'warning' } | null;
+    actionLogs: ActionLog[];
+    currentEmotion: string;
+    pendingAction: {
+        taskId: string;
+        taskName: string;
+        actionType: 'postpone' | 'cancel' | 'delegate' | 'complete';
+        timestamp: number;
+    } | null;
 
     // Actions
     setStressScore: (score: number) => void;
@@ -26,6 +35,11 @@ interface AuraState {
     addSessionData: (data: { time: string; score: number }) => void;
     resetSession: () => void;
     setFeedbackMessage: (message: { text: string; type: 'success' | 'info' | 'warning' } | null) => void;
+    addActionLog: (log: Omit<ActionLog, 'id'>) => void;
+    setCurrentEmotion: (emotion: string) => void;
+    setPendingAction: (action: AuraState['pendingAction']) => void;
+    clearPendingAction: () => void;
+    executePendingAction: () => void;
 }
 
 export const useAuraStore = create<AuraState>()(
@@ -41,6 +55,9 @@ export const useAuraStore = create<AuraState>()(
                 ],
                 sessionHistory: [],
                 feedbackMessage: null,
+                actionLogs: [],
+                currentEmotion: 'Neutral',
+                pendingAction: null,
 
                 setStressScore: (score) => set((state) => ({
                     stressScore: score,
@@ -98,7 +115,6 @@ export const useAuraStore = create<AuraState>()(
                     let success = false;
 
                     set((state) => {
-                        // Resilient ID check (handles string vs number)
                         const taskIndex = state.tasks.findIndex(t => String(t.id) === String(taskId));
 
                         if (taskIndex === -1) {
@@ -112,7 +128,6 @@ export const useAuraStore = create<AuraState>()(
                         if (adjustmentType === 'postpone') {
                             updatedTasks[taskIndex] = { ...task, day: 'tomorrow', status: 'postponed' };
                             message = `Postponed "${task.title}" to tomorrow.`;
-                            // Show feedback toast
                             setTimeout(() => {
                                 useAuraStore.getState().setFeedbackMessage({
                                     text: `"${task.title}" moved to tomorrow`,
@@ -120,6 +135,15 @@ export const useAuraStore = create<AuraState>()(
                                 });
                                 setTimeout(() => useAuraStore.getState().setFeedbackMessage(null), 3000);
                             }, 100);
+                            // Log action
+                            useAuraStore.getState().addActionLog({
+                                timestamp: Date.now(),
+                                time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+                                triggerEmotion: state.currentEmotion,
+                                action: `Postponed "${task.title}"`,
+                                outcome: 'success',
+                                stressScore: state.stressScore
+                            });
                         } else if (adjustmentType === 'cancel') {
                             updatedTasks[taskIndex] = { ...task, status: 'cancelled' };
                             message = `Cancelled "${task.title}".`;
@@ -130,6 +154,14 @@ export const useAuraStore = create<AuraState>()(
                                 });
                                 setTimeout(() => useAuraStore.getState().setFeedbackMessage(null), 3000);
                             }, 100);
+                            useAuraStore.getState().addActionLog({
+                                timestamp: Date.now(),
+                                time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+                                triggerEmotion: state.currentEmotion,
+                                action: `Cancelled "${task.title}"`,
+                                outcome: 'success',
+                                stressScore: state.stressScore
+                            });
                         } else if (adjustmentType === 'delegate') {
                             updatedTasks[taskIndex] = { ...task, status: 'delegated' };
                             message = `Marked "${task.title}" for delegation.`;
@@ -140,6 +172,14 @@ export const useAuraStore = create<AuraState>()(
                                 });
                                 setTimeout(() => useAuraStore.getState().setFeedbackMessage(null), 3000);
                             }, 100);
+                            useAuraStore.getState().addActionLog({
+                                timestamp: Date.now(),
+                                time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+                                triggerEmotion: state.currentEmotion,
+                                action: `Delegated "${task.title}"`,
+                                outcome: 'success',
+                                stressScore: state.stressScore
+                            });
                         } else if (adjustmentType === 'complete') {
                             updatedTasks[taskIndex] = { ...task, status: 'completed' };
                             message = `Awesome! I've marked "${task.title}" as completed.`;
@@ -150,6 +190,14 @@ export const useAuraStore = create<AuraState>()(
                                 });
                                 setTimeout(() => useAuraStore.getState().setFeedbackMessage(null), 3000);
                             }, 100);
+                            useAuraStore.getState().addActionLog({
+                                timestamp: Date.now(),
+                                time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+                                triggerEmotion: state.currentEmotion,
+                                action: `Completed "${task.title}"`,
+                                outcome: 'success',
+                                stressScore: state.stressScore
+                            });
                         }
 
                         success = true;
@@ -171,6 +219,27 @@ export const useAuraStore = create<AuraState>()(
                 resetSession: () => set({ stressScore: 0, sessionHistory: [] }),
 
                 setFeedbackMessage: (message) => set({ feedbackMessage: message }),
+
+                addActionLog: (log) => set((state) => ({
+                    actionLogs: [
+                        { ...log, id: Date.now().toString() },
+                        ...state.actionLogs
+                    ].slice(0, 50)
+                })),
+
+                setCurrentEmotion: (emotion) => set({ currentEmotion: emotion }),
+
+                setPendingAction: (action) => set({ pendingAction: action }),
+
+                clearPendingAction: () => set({ pendingAction: null }),
+
+                executePendingAction: () => {
+                    const { pendingAction } = useAuraStore.getState();
+                    if (pendingAction) {
+                        useAuraStore.getState().manageBurnout(pendingAction.taskId, pendingAction.actionType);
+                        useAuraStore.getState().clearPendingAction();
+                    }
+                },
             }),
             {
                 name: 'aura-ai-storage', // unique name for localStorage
